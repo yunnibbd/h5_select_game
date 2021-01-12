@@ -1,0 +1,282 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    <title>Document</title>
+    <style>
+        .point {
+            position: absolute;
+            border: 10px solid red;
+            cursor: pointer;
+        }
+
+        #display {
+            width: 100%;
+            height: 600px;
+            position: relative;
+        }
+
+        #myBtn {
+            width: 100px;
+            height: 60px;
+            user-select: none;
+            font-size: 20px;
+            background-color: #A5DC86;
+        }
+
+        #submit {
+            width: 100px;
+            height: 60px;
+            user-select: none;
+            font-size: 20px;
+            background-color: #A5DC86;
+        }
+
+        #info {
+            color: red;
+        }
+
+    </style>
+</head>
+<body>
+<button id="myBtn">创建连线</button>
+<button id="submit" onclick="Reload();">刷新页面</button>
+<span id="info">提示：点击创建连线后第一个点要点击两下，点击到另一个点后结束本次连线，每次连线不需要一次完成</span>
+<div id="display">
+    <div data="1" class="point" style="top:100px;left:80px"></div>
+    <div data="1" class="point" style="top:100px;right:80px"></div>
+    <div data="2" class="point" style="top:300px;left:80px"></div>
+    <div data="2" class="point" style="top:300px;right:80px"></div>
+    <div data="3" class="point" style="top:500px;left:80px"></div>
+    <div data="3" class="point" style="top:500px;right:80px"></div>
+</div>
+</body>
+<script src="./js/jquery.js"></script>
+<script src="./js/message.min.js"></script>
+<link rel="stylesheet" href="./js/sweetalert/sweetalert.css">
+<script src="./js/sweetalert/sweetalert.min.js"></script>
+<script src="./js/xfzalert.min.js"></script>
+<script>
+    // 获得画布
+    let display = document.getElementById("display");
+    // 获得所有的点
+    let allPoints = document.getElementsByClassName("point");
+    // 连线是否开始
+    let isStart = false;
+    // 第一个点坐标
+    let firstPoint = {};
+    // 第二点坐标
+    let secondPoint = {};
+    // 记录所有点的坐标的数组
+    let allPos = [];
+    $(allPoints).each(function (index, ele) {
+        let cur = $(this).offset();
+        allPos.push([cur.left, cur.top]);
+    });
+    // 记录是否选中了几个点
+    let selectPoint = 0;
+    // 选中的点数组
+    let selectPointArr = [];
+    // 需要对的连线次数
+    let toTrueNum = 3;
+    // 当前对的连接次数
+    let curTrueNum = 0;
+
+    function createLine() {
+        // 创建节点
+        function createPoints(event) {
+            if (!isStart) {
+                return;
+            }
+            if (!('xPoint' in firstPoint)) {
+                firstPoint.xPoint = event.pageX;
+                firstPoint.YPoint = event.pageY - 68;
+            } else {
+                secondPoint.xPoint = event.pageX;
+                secondPoint.YPoint = event.pageY - 68;
+            }
+
+            if ('xPoint' in firstPoint && 'xPoint' in secondPoint) {
+                let lineLength = calcLine(firstPoint, secondPoint);
+                let angle = getAngle(
+                    firstPoint.xPoint,
+                    firstPoint.YPoint,
+                    secondPoint.xPoint,
+                    secondPoint.YPoint
+                );
+                // 设置一个div 宽度为 两点之间的距离，并且以 transform-origin: 0 50% 为圆心旋转，角度已经算出来
+                let lineHtmlStr = `<div class="line" style="position:absolute;border-top: 1px solid red;width:${lineLength}px;top:${firstPoint.YPoint}px;left:${firstPoint.xPoint}px;transform:rotate(${angle}deg);transform-origin: 0 50%;cursor: pointer"></div>`;
+                // 添加到画布 后面
+                display.innerHTML = display.innerHTML + lineHtmlStr;
+                display.removeEventListener("click", createPoints);
+                firstPoint = secondPoint;
+                secondPoint = {};
+                rm[$('#display:last').get(0)] = false;
+            }
+        }
+
+        // 计算连线
+        function calcLine(firstPoint, secondPoint) {
+            // 计算出两个点之间的距离
+            let line = Math.sqrt(
+                Math.pow(firstPoint.xPoint - secondPoint.xPoint, 2) +
+                Math.pow(firstPoint.YPoint - secondPoint.YPoint, 2)
+            );
+            return line;
+        }
+
+        // 计算角度
+        // 获得人物中心和鼠标坐标连线，与y轴正半轴之间的夹角
+        function getAngle(x1, y1, x2, y2) {
+            // 获得人物中心和鼠标坐标连线，与y轴正半轴之间的夹角
+            var x = x1 - x2;
+            var y = y1 - y2;
+            var z = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2));
+            var cos = y / z;
+            var radina = Math.acos(cos); // 用反三角函数求弧度
+            var angle = 180 / (Math.PI / radina); // 将弧度转换成角度
+            if (x2 > x1 && y2 === y1) {
+                // 在x轴正方向上
+                angle = 0;
+            }
+            if (x2 > x1 && y2 < y1) {
+                // 在第一象限;
+                angle = angle - 90;
+            }
+            if (x2 === x1 && y1 > y2) {
+                // 在y轴正方向上
+                angle = -90;
+            }
+            if (x2 < x1 && y2 < y1) {
+                // 在第二象限
+                angle = 270 - angle;
+            }
+            if (x2 < x1 && y2 === y1) {
+                // 在x轴负方向
+                angle = 180;
+            }
+            if (x2 < x1 && y2 > y1) {
+                // 在第三象限
+                angle = 270 - angle;
+            }
+            if (x2 === x1 && y2 > y1) {
+                // 在y轴负方向上
+                angle = 90;
+            }
+            if (x2 > x1 && y2 > y1) {
+                // 在四象限
+                angle = angle - 90;
+            }
+            return angle;
+        }
+
+        display.removeEventListener("click", createPoints);
+        // 添加节点
+        display.addEventListener("click", createPoints, false);
+    }
+
+    /**
+     * 返回传入的点是否在节点中并返回节点下表
+     * @param x
+     * @param y
+     * @returns {{inPoint: boolean, index: number}}
+     */
+    function checkPos(x, y) {
+        let ret = {
+            inPoint: false,
+            index: 0
+        };
+        for (let i = 0; i < allPos.length; i++) {
+            if (x >= allPos[i][0] && x <= allPos[i][0] + 20) {
+                if (y >= allPos[i][1] && y <= allPos[i][1] + 20) {
+                    ret.inPoint = true;
+                    ret.index = i;
+                    return ret;
+                }
+            }
+        }
+        return ret;
+    }
+
+    function Reload() {
+        xfzalert.alertConfirm({
+            title: '请选择',
+            confirmText: '确定',
+            cancelText: '取消',
+            text: '您确定要重新加载本页面吗',
+            confirmCallback: function () {
+                window.location.reload();
+            }
+        });
+    }
+</script>
+<script>
+    let createBtm = document.getElementById("myBtn");
+    // let subBtn = document.getElementById("submit");
+    // 创建连线绑定
+    createBtm.onclick = function (e) {
+        if (isStart) {
+            window.messageBox.showInfo("本次连线还没有完成！");
+            return;
+        }
+        e.stopPropagation();
+        isStart = true;
+        display.addEventListener("click", createLine, false);
+    };
+    // // 确定连线解绑
+    // subBtn.onclick = function (e) {
+    //     e.stopPropagation();
+    //     isStart = false;
+    //     firstPoint = {};
+    //     secondPoint = {};
+    //     display.removeEventListener("click", createLine);
+    // };
+
+    document.onclick = function (ev) {
+        if (!isStart) {
+            return;
+        }
+        ev = ev || event;
+        let ret = checkPos(ev.pageX, ev.pageY);
+        if (ret.inPoint) {
+            if (selectPoint >= 2) {
+                isStart = false;
+                firstPoint = {};
+                secondPoint = {};
+                display.removeEventListener("click", createLine);
+                // 选中节点数加一
+                selectPoint++;
+                selectPointArr.push(allPoints[ret.index]);
+                if (selectPoint >= 2) {
+                    // 选中了2个以上的点，要进行判断对错
+                    if ($(selectPointArr[0]).attr('data') === $(selectPointArr[2]).attr('data')) {
+                        curTrueNum++;
+                        if (curTrueNum == toTrueNum) {
+                            xfzalert.alertSuccess('你好棒哦，答对了！', function () {
+                                window.location.reload();
+                            })
+                        } else {
+                            window.messageBox.showInfo("还要" + (toTrueNum - curTrueNum) + "根正确连线!");
+                        }
+                    } else {
+                        window.messageBox.showError("错误连线一次 ! ");
+                    }
+                    // 清除选中点个数和选中点数组
+                    selectPoint = 0;
+                    selectPointArr = [];
+                }
+            } else {
+                selectPoint++;
+                selectPointArr.push(allPoints[ret.index]);
+            }
+        } else {
+            if (selectPoint === 0) {
+                isStart = false;
+                window.messageBox.showInfo("第一次必须是点，请重新点击创建新线!");
+            }
+        }
+    };
+</script>
+</html>

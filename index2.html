@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>小游戏</title>
+    <link rel="stylesheet" href="./css/animate.css">
+    <script src="./js/jquery.js"></script>
+    <script src="./js/sweetalert/sweetalert.min.js"></script>
+    <link rel="stylesheet" href="./js/sweetalert/sweetalert.css">
+    <script src="./js/xfzalert.js"></script>
+    <script src="./js/message.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            text-decoration: none;
+        }
+
+        body {
+            background: url("./img/bg.jpg");
+        }
+
+        #header {
+            width: 100%;
+            height: 80px;
+            display: flex;
+            flex-direction: row;
+            border-bottom: #fff 2px solid;
+        }
+
+        #content {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        #box1 {
+            width: 50%;
+            height: 800px;
+            border-right: #fff 1px solid;
+            /*background-color: pink;*/
+        }
+
+        #submit {
+            position: fixed;
+            bottom: 100px;
+            left: 25%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 60px;
+            border-radius: 8px;
+            z-index: 999;
+            display: none;
+            user-select: none;
+        }
+
+        #box2 {
+            border-left: #fff 1px solid;
+            width: 50%;
+            height: 800px;
+            /*background-color: skyblue;*/
+        }
+
+        #box2 .img {
+            width: 180px;
+            height: 100px;
+            margin: 3px 3px 0 3px;
+            background-color: skyblue;
+            user-select: none;
+            -webkit-user-drag: none;
+            position: absolute;
+        }
+
+        #box2 .check {
+            width: 180px;
+            height: 100px;
+            z-index: 999;
+            position: absolute;
+            opacity: .5;
+            display: none;
+        }
+
+        #reSelect {
+            display: none;
+            position: fixed;
+            bottom: 100px;
+            right: 25%;
+            transform: translateX(50%);
+            width: 100px;
+            height: 60px;
+            border-radius: 8px;
+            z-index: 999;
+            user-select: none;
+        }
+
+        #start {
+            transform: translateX(-50%);
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            border-radius: 10px;
+            width: 150px;
+            height: 70px;
+            user-select: none;
+            font-size: 20px;
+        }
+
+        #header .common {
+            border-radius: 10px;
+            width: 100px;
+            height: 60px;
+            user-select: none;
+            font-size: 20px;
+            background-color: #A5DC86;
+            margin-top: 10px;
+            margin-left: 20px;
+        }
+
+        #header .paCommon {
+            margin-left: 30px;
+            line-height: 80px;
+            color: purple;
+            font-size: 25px;
+        }
+
+        #header .paCommon span {
+            color: red;
+        }
+
+        #submitTArr {
+            display: none;
+        }
+
+        #hideSelect {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div id="header">
+    <button class="common" onclick="Reload();">刷新整个页面</button>
+    <button id="setGenNum" class="common">设置生成数量</button>
+    <button id="setSelectNum" class="common">设置选择数量</button>
+    <button id="mySelect" class="common">手动设置答案</button>
+    <button id="submitTArr" class="common">确定正确答案</button>
+    <button id="showSelect" class="common">显示正确答案</button>
+    <button id="hideSelect" class="common">隐藏正确答案</button>
+    <div id="pa1" class="paCommon">生成盒子：<span>10</span></div>
+    <div id="pa2" class="paCommon">选择盒子: <span>5</span></div>
+</div>
+<div id="content">
+    <div id="box1">
+        <button id="submit">确认</button>
+    </div>
+    <div id="box2">
+        <button id="reSelect">重选</button>
+    </div>
+</div>
+<button id="start">开始游戏</button>
+<script>
+    // 刷新整个页面
+    function Reload() {
+        xfzalert.alertConfirm({
+            title: '您确定要刷新吗',
+            text: '一旦刷新将会重置',
+            confirmCallback: function () {
+                window.location.reload();
+            }
+        });
+    }
+
+    /**
+     * 判断是否在数组中
+     * @param num
+     * @param arr
+     * @returns {boolean}
+     */
+    function isInArr(num, arr) {
+        let ret = false;
+        for (let i = 0; i < arr.length; i++) {
+            if (arr[i] == num) {
+                ret = true;
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * 生成范围内的数
+     * @param minNum
+     * @param maxNum
+     * @returns {number}
+     */
+    function randomNum(minNum, maxNum) {
+        switch (arguments.length) {
+            case 1:
+                return parseInt(Math.random() * minNum + 1, 10);
+            case 2:
+                return parseInt(Math.random() * (maxNum - minNum + 1) + minNum, 10);
+            default:
+                return 0;
+        }
+    };
+
+    // 获取窗口的宽度和高度
+    function getWinWH() {
+        let winWidth = 0;
+        let winHeight = 0;
+        if (window.innerWidth)
+            winWidth = window.innerWidth;
+        else if ((document.body) && (document.body.clientWidth))
+            winWidth = document.body.clientWidth;
+        //获取窗口高度
+        if (window.innerHeight)
+            winHeight = window.innerHeight;
+        else if ((document.body) && (document.body.clientHeight))
+            winHeight = document.body.clientHeight;
+        return [winWidth, winHeight];
+    }
+
+    /**
+     * 设置生成盒子的数量和要选择的盒子的数量
+     * @param genNum
+     * @param selectNum
+     */
+    function setPa(genNum, selectNum) {
+        $('#pa1>span').text(genNum);
+        $('#pa2>span').text(selectNum);
+    };
+
+
+    /**
+     * 根据传进来的参数大小生成盒子
+     * @param genNum
+     * @returns {string}
+     */
+    function genImg(genNum) {
+        // 拼接要生成的盒子图片
+        let tmp = '';
+        for (let x = 0; x < genNum; x++) {
+            // tmp += '<img data="' + (x + 1) + '" class="img" src="./img/s.jpg" alt="">';
+            tmp += '<img data="' + (x + 1) + '" class="img" src="./img/'+ (x + 1) +'.jpg" alt="">';
+            tmp += '<input check="false" data="' + (x + 1) + '" class="check" type="checkbox">'
+        }
+        return tmp;
+    }
+
+    /**
+     * 判断arr数组的元素是否与tArr数组的元素相同
+     * @param arr
+     * @param tArr
+     * @returns {boolean}
+     */
+    function compareArr(arr, tArr) {
+        let ret = true;
+        // 判断选择对不对
+        if (arr.length != tArr.length) {
+            return false;
+        }
+        for (let x = 0; x < arr.length; x++) {
+            if (!(isInArr(arr[x], tArr))) {
+                ret = false;
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * 生成1-genNum之间的selectNum个数加入到数组中
+     * @param tArr
+     * @param selectNum
+     * @param genNum
+     */
+    function addNumToArr(tArr, selectNum, genNum) {
+        while (tArr.length > 0) {
+            tArr.pop();
+        }
+        for (let x = 0; x < selectNum; x++) {
+            let num = randomNum(1, genNum);
+            while (isInArr(num, tArr)) {
+                num = randomNum(1, genNum);
+            }
+            tArr.push(num);
+        }
+    }
+
+    /**
+     * 跟新界面上显示的生成数量和选择数量
+     * @param genNum
+     * @param selectNum
+     */
+    function updateNum(genNum, selectNum) {
+        $('#pa1>span').text(genNum);
+        $('#pa2>span').text(selectNum);
+    }
+
+    /**
+     * 从参数一数组中删除某个元素
+     * @param arr
+     * @param num
+     */
+    function removeNumFromArr(arr, num) {
+        for (let x = 0; x < arr.length; x++) {
+            if (arr[x] == num) {
+                arr.splice(x, 1);
+            }
+        }
+    }
+
+    /**
+     * 传入一个jquery对象，设置它的子盒子的位置
+     * @param bom
+     * @param startLeft
+     * @param startTop
+     */
+    function resetImgWH(bom, startLeft, startTop) {
+        bom.each(function (index, domEle) {
+            // 计算当前元素的行数
+            let row = parseInt(index / 3);
+            // 计算当前元素列数
+            let column = index % 3;
+            $(this).css({
+                'left': startLeft + column * 180 + 6 + column * 15 + 'px',
+                'top': startTop + row * 103 + 3 + row * 10 + 'px'
+            });
+            $(this).next().css({
+                'left': startLeft + column * 180 + 6 + column * 15 + 'px',
+                'top': startTop + row * 103 + 3 + row * 10 + 'px'
+            });
+        });
+    }
+
+    /**
+     * 传入一个jq元素对象，判断这个元素是否被选中
+     * @param bom
+     * @returns {boolean}
+     */
+    function checkSelect(bom) {
+        if (bom.offset().left < ($(window).width() / 2 - bom.width() / 2)) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 如果一个数组中没有这个数，那就把这个数添加进数组中
+     * @param arr
+     * @param num
+     */
+    function addANumToArr(arr, num) {
+        for (let x = 0; x < arr.length; x++) {
+            if (arr[x] == num) {
+                return;
+            }
+        }
+        arr.push(num);
+    }
+
+    /**
+     * 删除一个数组中的所有元素
+     * @param arr
+     */
+    function clearArr(arr) {
+        while (arr.length > 0) {
+            arr.pop();
+        }
+    }
+
+    /**
+     * 给传入的jq对像绑定点击事件
+     * @param bom
+     */
+    function addEventToImg(bom) {
+        bom.each(function (index, domEle) {
+            // 预存当前对象
+            let that = $(this);
+            $(this).mousedown(function (ev) {
+                ev = ev || window.event;
+                //1、鼠标的坐标
+                let pageX = ev.pageX || scroll().left + ev.clientX;
+                let pageY = ev.pageY || scroll().top + ev.clientY;
+                //2、鼠标在盒子中的坐标
+                let x = pageX - this.offsetLeft;
+                let y = pageY - this.offsetTop;
+                // 求出盒子在浏览器窗口最大left
+                let windowMaxLeft = $(window).width() - 186;
+                $(document).mousemove(function (ev) {
+                    ev = ev || window.event;
+                    //3、进入onmousemove事件，鼠标左边不断更新
+                    pageX = ev.pageX || scroll().left + ev.clientX;
+                    pageY = ev.pageY || scroll().top + ev.clientY;
+                    let tmpLeft = pageX - x;
+                    let tmpTop = pageY - y;
+                    if (tmpTop >= 80 && tmpLeft <= windowMaxLeft) {
+                        that.css({
+                            'left': tmpLeft + 'px',
+                            'top': tmpTop + 'px'
+                        });
+                    } else {
+                        // 取消元素移动事件
+                        $(document).unbind('mousemove');
+                        // 判断有无被选中添加进arr
+                        let data = parseInt(that.attr('data'));
+                        if (checkSelect(that)) {
+                            addANumToArr(arr, data);
+                        } else {
+                            removeNumFromArr(arr, data);
+                        }
+                    }
+                });
+                //解绑
+                $(document).mouseup(function () {
+                    $(document).unbind('mousemove');
+                    // 判断有无被选中添加进arr
+                    let data = parseInt(that.attr('data'));
+                    if (checkSelect(that)) {
+                        addANumToArr(arr, data);
+                    } else {
+                        removeNumFromArr(arr, data);
+                    }
+                });
+                that.mouseup(function () {
+                    $(document).unbind('mousemove');
+                    // 判断有无被选中添加进arr
+                    let data = parseInt(that.attr('data'));
+                    if (checkSelect(that)) {
+                        addANumToArr(arr, data);
+                    } else {
+                        removeNumFromArr(arr, data);
+                    }
+                })
+            });
+        });
+    }
+
+    /**
+     * 让复选框根据arr中的元素选中
+     * @param bom
+     * @param arr
+     */
+    function setCheck(bom, arr) {
+        bom.each(function (index, domEle) {
+            let curNum = parseInt($(this).attr('data'));
+            if (isInArr(curNum, arr)) {
+                $(this).next().prop('checked', 'checked');
+            }
+        });
+    }
+
+    /**
+     * 隐藏所有的选项框
+     */
+    function hideCheck() {
+        $('.check').each(function (index, domEle) {
+            $(domEle).hide();
+        });
+    }
+
+    /**
+     * 显示所有的选项框
+     */
+    function showCheck() {
+        $('.check').each(function (index, domEle) {
+            $(domEle).show();
+        });
+    }
+</script>
+<script>
+    // 生成的盒子数量
+    let genNum = 10;
+    // 要选择的盒子数量
+    let selectNum = 5;
+    // 用户点击添加的数组
+    let arr = [];
+    // 正确的数组
+    let tArr = [];
+    // 如果要自定义答案，手动添加的数组
+    let mySelectArr = [];
+    // 游戏是否开始
+    let isStart = false;
+
+    // 开局为正确盒子数组添加selectNum个数
+    addNumToArr(tArr, selectNum, genNum);
+    console.log('arr : ', arr.toString());
+    console.log('tArr : ', tArr.toString());
+    $(function () {
+        // 点击设置选择参数按钮触发的事件
+        $('#setSelectNum').click(function () {
+            if (!isStart) {
+                xfzalert.alertOneInput({
+                    confirmCallback: function (inputValue) {
+                        let reg = /^\d+$/;
+                        if (!reg.test(inputValue)) {
+                            window.messageBox.showError('请输入数字！');
+                        } else {
+                            if (parseInt(inputValue) > genNum) {
+                                window.messageBox.showError('选择数量不能大于生成的数量！');
+                            } else {
+                                selectNum = inputValue;
+                                // 更新数量显示
+                                updateNum(genNum, selectNum);
+                                // 更新数组
+                                addNumToArr(tArr, selectNum, genNum);
+                            }
+                        }
+                        xfzalert.close();
+                    }
+                })
+            } else {
+                xfzalert.alertInfoToast('游戏已开始！');
+            }
+        });
+        // 点击隐藏正确答案触发的事件
+        $('#hideSelect').click(function () {
+            hideCheck();
+            $(this).hide();
+            // 显示显示正确答案按键
+            $('#showSelect').show();
+            // 显示手动设置正确答案按键
+            $('#mySelect').show();
+            // 显示确认和重选按键
+            $('#submit').show();
+            $('#reSelect').show();
+        });
+        // 点击设置生成参数按钮触发的事件
+        $('#setGenNum').click(function () {
+            if (!isStart) {
+                xfzalert.alertOneInput({
+                    confirmCallback: function (inputValue) {
+                        let reg = /^\d+$/;
+                        if (!reg.test(inputValue)) {
+                            window.messageBox.showError('请输入数字！');
+                        } else {
+                            if (parseInt(inputValue) < selectNum) {
+                                window.messageBox.showError('生成数量不能小于选择的数量！');
+                            } else {
+                                genNum = inputValue;
+                                // 更新数量显示
+                                updateNum(genNum, selectNum);
+                                // 更新数组
+                                addNumToArr(tArr, selectNum, genNum);
+                            }
+                        }
+                        xfzalert.close();
+                    }
+                })
+            } else {
+                xfzalert.alertInfoToast('游戏已开始！');
+            }
+        });
+        // 点击显示正确答案触发的事件
+        $('#showSelect').click(function () {
+            if (isStart) {
+                showCheck();
+                $('#hideSelect').show();
+                // 隐藏手动设置正确答案
+                $('#mySelect').hide();
+                // 隐藏自己
+                $(this).hide();
+                // 隐藏确定和重选按键
+                $('#submit').hide();
+                $('#reSelect').hide();
+            } else {
+                xfzalert.alertInfoToast('请先开始游戏');
+            }
+        });
+        // 点击确定修改正确答案触发的事件
+        $('#submitTArr').click(function () {
+            xfzalert.alertConfirm({
+                title: '请选择',
+                text: '确认将会修改正确答案',
+                confirmCallback: function () {
+                    // 将选择的答案添加到mySelectArr数组中
+                    let checkeds = $('.check:checked');
+                    checkeds.each(function (index, domEle) {
+                        addANumToArr(mySelectArr, parseInt($(this).attr('data')));
+                    });
+                    // 更新正确数组tArr
+                    clearArr(tArr);
+                    for (let x = 0; x < mySelectArr.length; x++) {
+                        addANumToArr(tArr, mySelectArr[x]);
+                    }
+                    // 清空mySelectArr
+                    clearArr(mySelectArr);
+                    // 隐藏确认修改正确答案按键
+                    $('#submitTArr').hide();
+                    // 隐藏所有的选项框
+                    hideCheck();
+                    // 显示显示正确答案按键
+                    $('#showSelect').show();
+                    // 更新显示界面selectNum
+                    setPa(genNum, tArr.length);
+                    // 显示确认和重选按键
+                    $('#submit').show();
+                    $('#reSelect').show();
+                }
+            })
+        });
+        // 点击手动设置答案触发的事件
+        $('#mySelect').click(function () {
+            if (!isStart) {
+                xfzalert.alertInfoToast('请先开始游戏！');
+            } else {
+                // 获取右边大盒子左上角点相对于
+                let startLeft = $('#box2').offset().left;
+                let startTop = $('#box2').offset().top;
+                let boxImgs = $('#box2 .img');
+                resetImgWH(boxImgs, startLeft, startTop);
+                // 将确定修改正确答案显示出来
+                $('#submitTArr').show();
+                // 将所有的选项框都显示出来
+                showCheck();
+                // 隐藏显示正确答案按键
+                $('#showSelect').hide();
+                // 隐藏确认和重选按键
+                $('#submit').hide();
+                $('#reSelect').hide();
+            }
+        });
+        // 点击开始游戏事件
+        $('#start').click(function () {
+            xfzalert.alertConfirm({
+                title: '游戏须知',
+                confirmText: '我知道了',
+                cancelText: '我还不明白',
+                text: '请将右侧的盒子拖到左边代表选中，点击确定即可，参数均可以预先设置',
+                confirmCallback: function () {
+                    // 设置游戏开始
+                    isStart = true;
+                    // 获取右边大盒子左上角点相对于
+                    let startLeft = $('#box2').offset().left;
+                    let startTop = $('#box2').offset().top;
+                    // 隐藏开始游戏按键
+                    $('#start').hide();
+                    // 显示确定和重选按钮
+                    $('#reSelect').show();
+                    $('#submit').show();
+                    // 在界面右边生成与genNum等数量的盒子
+                    $('#box2').append(genImg(genNum));
+                    // 给每个盒子设置位置
+                    let boxImgs = $('#box2 .img');
+                    resetImgWH(boxImgs, startLeft, startTop);
+                    // 让复选框选中
+                    setCheck(boxImgs, tArr);
+                    // 给重选按钮添加上重置图片盒子位置的事件
+                    $('#reSelect').click(function () {
+                        let ret = confirm('您要重新选择吗');
+                        if (ret) {
+                            resetImgWH(boxImgs, startLeft, startTop);
+                            clearArr(arr);
+                        }
+                    });
+                    // 给确认按钮添加点击事件
+                    $('#submit').click(function () {
+                        console.log(arr);
+                        // 判断用户是否选择正确
+                        let ret = confirm('您确定吗');
+                        if (ret) {
+                            console.log('arr: ', arr);
+                            console.log('tArr: ', tArr)
+                            if (arr.length > 0 && compareArr(arr, tArr)) {
+                                // 用户判断正确
+                                xfzalert.alertSuccess('你好棒哦，答对了！', function () {
+                                    window.location.reload();
+                                })
+                            } else {
+                                // 用户判断错误
+                                xfzalert.alertError('很遗憾，你答错了！，正确值是：' + tArr.toString());
+                            }
+                        }
+                    });
+                    // 给每个生成的图片添加鼠标按下事件
+                    addEventToImg($('#box2 img'));
+                }
+            });
+        });
+    })
+</script>
+</body>
+</html>
